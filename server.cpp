@@ -1,283 +1,156 @@
 #include <iostream>
-#include <memory>
 #include <thread>
+#include <memory>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<unistd.h>
 
 
-// Default port number
-static const unsigned int DEFAULT_PORT_NUMBER		= 5000;
-// Default number of clients
-static const unsigned int DEFAULT_CLIENTS_NUMBER	= 10;
+// Connection settings
+#include "settings.hpp"
 
 
-// Server class
-class server {
+// Clients connection handler
+void* connection_handler(int* socket_desc) {
 
-	sockaddr_in	handshakeAddr	{};	// Server handshake address
+	// Socket descriptor
+	int sock	= *socket_desc;
+	// Number of readed bytes
+	int readed	= 0;
 
-	std::thread	servThread;		// Server thread
-	std::thread	handshakeThread;	// Server handshake thread
+	// Client message holder
+	std::unique_ptr<char[]>	messageClient(new char[BUFFER_SIZE]);
 
-	int		handshakefd;		// Server handshake descriptor
+	// Read a message from client
+	while ((readed = read(sock, messageClient.get(), BUFFER_SIZE)) > 0) {
 
-	unsigned int	handshakePortNumber;	// Server port number
+		// Output what was readed
+		std::cout << "Readed:\t" << readed << "\t" << messageClient.get() << std::endl;
 
-	bool		isRunning;		// Is server running
+		// Send the message back to client
+		if (write(sock, messageClient.get(), readed) < 0) {
 
-
-public:
-
-	// C-tor
-	server();
-	// C-tor
-	explicit server(unsigned int port);
-	// D-tor
-	~server();
-
-	// Start
-	void		start();
-	// Stop
-	void		stop();
-
-	// Server thread
-	void		serverThread();
-	// Server handshake thread
-	void		serverHandshakeThread();
-
-
-};
-
-
-// C-tor
-server::server()
-	: handshakefd		(-1),
-	  handshakePortNumber	(DEFAULT_PORT_NUMBER),
-	  isRunning		(false) {}
-
-// C-tor
-server::server(unsigned int port)
-	: handshakefd		(-1),
-	  handshakePortNumber	(port),
-	  isRunning		(false) {}
-
-// D-tor
-server::~server() {
-}
-
-
-// Start
-void server::start() {
-
-	// Set server to running state
-	isRunning = true;
-
-	// Start server thread
-	handshakeThread = std::thread(&server::serverHandshakeThread, this);
-
-}
-
-// Stop
-void server::stop() {
-
-	// Set server to stopped state
-	isRunning = false;
-
-	// Stop server thread
-	if (handshakeThread.joinable()) {
-
-		handshakeThread.join();
-
-	}
-
-}
-
-
-// Server thread
-void server::serverThread() {
-
-	sockaddr_in	serv_addr	{};				// Server listener address
-
-	int		listenfd	= -1;				// Server listener descriptor
-	int		connectionfd	= -1;				// Server connection descriptor
-
-	unsigned int	portNumber	= handshakePortNumber + 1;	// Server port number
-
-	// Create array for data holding
-	std::unique_ptr<unsigned char[]> sendBuff = std::unique_ptr<unsigned char[]>(new unsigned char[1024]);
-
-	// Listener file descriptor
-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-
-		std::cout << "ERROR\tUnable to open listener socket" << std::endl;
-		return;
-
-	}
-
-	// Cleanup server structures
-	bzero(reinterpret_cast<char*>(&serv_addr), sizeof(serv_addr));
-
-	// Setup sevrev socket info
-	serv_addr.sin_family		= AF_INET;
-	serv_addr.sin_addr.s_addr	= htonl(INADDR_ANY);
-	serv_addr.sin_port		= htons(portNumber);
-
-	// Bind server to required port
-	if (bind(listenfd, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr)) < 0) {
-
-		std::cout << "ERROR\tUnable to bind port " << portNumber << std::endl;
-		std::cout << strerror(errno) << std::endl;
-		return;
-
-	}
-
-	// Listen for connection (maximum 10)
-	if (listen(listenfd, DEFAULT_CLIENTS_NUMBER) < 0) {
-
-		std::cout << "ERROR\tUnable to listen to socket" << std::endl;
-		return;
-
-	}
-
-	// Accept incoming connection
-	if ((connectionfd = accept(listenfd, nullptr, nullptr)) < 0) {
-
-		std::cout << "ERROR\tUnable to accept connection" << std::endl;
-		return;
-
-	}
-
-	// Write message
-	memcpy(sendBuff.get(), "SERVER HELLO!", 13);
-
-	// Write data to soccet
-	if (write(connectionfd, sendBuff.get(), 13) < 0) {
-
-		std::cout << "ERROR\tUnable to write connection" << std::endl;
-		return;
-
-	}
-
-	// Close connection
-	if (close(connectionfd) < 0) {
-
-		std::cout << "ERROR\tUnable to close connection" << std::endl;
-		return;
-
-	}
-
-	// Close connection
-	if (close(listenfd) < 0) {
-
-		std::cout << "ERROR\tUnable to close socket" << std::endl;
-		return;
-
-	}
-
-}
-
-
-// Server handshake thread
-void server::serverHandshakeThread() {
-
-	// Create array for data holding
-	std::unique_ptr<char[]> sendBuff = std::unique_ptr<char[]>(new char[1024]);
-
-	// Listener file descriptor
-	if ((handshakefd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-
-		std::cout << "ERROR\tUnable to open handshake socket" << std::endl;
-		return;
-
-	}
-
-
-	// Allow broadcast?
-	int broadcast = 1;
-	// Make socket available broadcast
-	if (setsockopt(handshakefd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
-
-		std::cout << "ERROR\tUnable to allow socket BROADCAST" << std::endl;
-		return;
-
-	}
-
-	// Cleanup server structures
-	bzero(reinterpret_cast<char*>(&handshakeAddr), sizeof(handshakeAddr));
-
-	// Setup sevrev socket info
-	handshakeAddr.sin_family	= AF_INET;
-	handshakeAddr.sin_addr.s_addr	= htonl(INADDR_ANY);
-	handshakeAddr.sin_port		= htons(handshakePortNumber);
-
-	// Bind server to required port
-	if (bind(handshakefd, reinterpret_cast<sockaddr*>(&handshakeAddr), sizeof(handshakeAddr)) < 0) {
-
-		std::cout << "ERROR\tUnable to bind handshake port " << handshakePortNumber << std::endl;
-		return;
-
-	}
-
-	// Main server loop
-	while (isRunning) {
-
-		int		readed	= 0;
-		unsigned int	length	= sizeof(handshakeAddr);
-
-		// Wait for data from connected clients
-		if ((readed = recvfrom(handshakefd, sendBuff.get(), 1024, 0, reinterpret_cast<sockaddr*>(&handshakeAddr), &length)) < 0) {
-
-			std::cout << "ERROR\tReceive data from broadcast" << std::endl;
-			return;
+			std::cout << "Write failed" << std::endl;
 
 		}
 
-		// Output string if something readed
-		if (readed > 0) {
-
-			std::cout << sendBuff.get() << std::endl;
-
-		}
-
-		// Yield thread
-		std::this_thread::yield();
+		// Cleanup buffer
+		memset(messageClient.get(), 0, BUFFER_SIZE);
 
 	}
 
-	// Close connection
-	if (close(handshakefd) < 0) {
+	// If 0 bytes readed - client was disconnected
+	if (readed == 0) {
 
-		std::cout << "ERROR\tUnable to close handshake socket" << std::endl;
-		return;
+		std::cout << "Client disconnected" << std::endl;
+
+	// If -1 was returned - some errors during read
+	} else if(readed == -1) {
+
+		std::cout << "Read failed" << std::endl;
 
 	}
+		
+	// Free the socket pointer
+	delete socket_desc;
 
-}
-
-
-int main(int argc, char *argv[]) {
-
-	// Server object
-	server s;
-
-	// Server started
-	s.start();
-
-	// Wait
-	std::this_thread::sleep_for(std::chrono::seconds(1000));
-
-	// Server stopped
-	s.stop();
-
+	// Exit successfully
 	return 0;
 
 }
+
+
+// Main server thread
+int main(int argc, const char* argv[]) {
+
+	int		socketServer	= -1;		// Server socket
+	int		socketClient	= -1;		// Client socket
+
+	sockaddr_in	server;				// Server address
+	sockaddr_in	client;				// Client address
+
+	// Create TCP socket
+	socketServer = socket(AF_INET, SOCK_STREAM, 0);
+	// Socket creation error
+	if (socketServer == -1) {
+
+		std::cout << "Could not create socket" << std::endl;
+
+	}
+	// Socket creation succeeded
+	std::cout << "Socket created" << std::endl;
+
+	// Multiclient flag
+	int multiclient = 1;
+	// Enable multiclient connect
+	if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &multiclient, sizeof(int)) < 0) {
+
+		std::cout << "Could not allow SO_REUSEADDR | SO_REUSEPORT" << std::endl;
+
+	}
+	//
+	std::cout << "Socket allowed SO_REUSEADDR | SO_REUSEPORT" << std::endl;
+
+	// Zero the server address structure
+	bzero(&server, sizeof(sockaddr_in));
+	// Prepare the server address structure
+	server.sin_family	= AF_INET;
+	server.sin_addr.s_addr	= INADDR_ANY;
+	server.sin_port		= htons(SERVER_PORT);
+
+	// Bind socket to port
+	if (bind(socketServer, reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
+
+		// Error during binding
+		std::cout << "Bind failed. Error" << std::endl;
+		return 1;
+
+	}
+	// Binding to port success
+	std::cout << "Bind done" << std::endl;
+	
+	// Listen for port (maximum 10 connections)
+	listen(socketServer, 10);
+
+	//Accept and incoming connection
+	std::cout << "Waiting for incoming connections..." << std::endl;
+	socklen_t clientLength = sizeof(sockaddr_in);
+
+	// Wait for connection
+	while ((socketClient = accept(socketServer, reinterpret_cast<sockaddr*>(&client), static_cast<socklen_t*>(&clientLength))) > 0) {
+
+		// Connection was accepted
+		std::cout << "Connection accepted" << std::endl;
+
+		// Create connection handler thread
+		std::thread thrd = std::thread(connection_handler, new int(socketClient));
+		// Run thread in background
+		if (thrd.joinable()) {
+
+			thrd.detach();
+
+		}
+
+		// Handler was successfully assigned
+		std::cout << "Handler assigned" << std::endl;
+
+	}
+
+	// Connection accept was failed
+	if (socketClient < 0) {
+
+		std::cout << "Accept failed" << std::endl;
+		return 1;
+
+	}
+
+	// Exit program
+	return 0;
+
+}
+
+
