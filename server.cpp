@@ -14,6 +14,180 @@
 #include "settings.hpp"
 
 
+/// Networking namespace
+namespace networking {
+
+
+	// Maximum clients number
+	static const unsigned int	MAX_CLIENTS_NUMBER	= 1024;
+
+
+	// TCP server class
+	class tcpserver {
+
+		bool	isRunnig;		// Is server running
+
+
+	public:
+
+		// C-tor
+		tcpserver();
+		// C-tor
+		explicit tcpserver(const unsigned int serverPort);
+		// C-tor
+		tcpserver(const unsigned int serverPort, const unsigned int maxClients);
+		// D-tor
+		~tcpserver();
+
+		// Start server
+		bool	start(const unsigned int serverPort);
+		// Start server
+		bool	start(const unsigned int serverPort, const unsigned int maxClients);
+		// Stop server
+		bool	stop();
+
+		// Send message to client
+		bool	send(const char* msg, const int size);
+		// Receive message from client
+		bool	receive(char* msg, const int size);
+
+		// Is server running
+		bool	running();
+
+
+	};
+
+
+	// C-tor
+	tcpserver::tcpserver()
+		: isRunning(false) {}
+
+	// C-tor
+	tcpserver::tcpserver(const unsigned int serverPort)
+		: isRunning(false) {
+
+		// Start server on required port with default maximum clients number
+		start(serverPort, MAX_CLIENTS_NUMBER);
+
+	}
+
+	// C-tor
+	tcpserver::tcpserver(const unsigned int serverPort, const unsigned int maxClients)
+		: isRunning(false) {
+
+		// Start server on required port
+		start(serverPort, maxClients);
+
+	}
+
+	// D-tor
+	tcpserver::~tcpserver() {
+
+		// Stop server if running
+		if (isRunning) {
+
+			stop();
+
+		}
+
+	}
+
+
+	// Start server
+	bool tcpserver::start(const unsigned int serverPort) {
+
+		// Start with default maximum clients number
+		start(serverPort, MAX_CLIENTS_NUMBER);
+
+	}
+
+	// Start server
+	bool tcpserver::start(const unsigned int serverPort, const unsigned int maxClients) {
+
+		// Create TCP socket
+		socketServer = socket(AF_INET, SOCK_STREAM, 0);
+		// Socket creation error
+		if (socketServer == -1) {
+
+			// Erro during socket creation
+			return false;
+
+		}
+		// Socket creation succeeded
+		std::cout << "Socket created" << std::endl;
+
+		// Multiclient flag
+		int multiclient = 1;
+		// Enable multiclient connect
+		if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &multiclient, sizeof(int)) < 0) {
+
+			// Error during socket options setup
+			return false;
+
+		}
+
+		// Zero the server address structure
+		bzero(&server, sizeof(sockaddr_in));
+		// Prepare the server address structure
+		server.sin_family	= AF_INET;
+		server.sin_addr.s_addr	= INADDR_ANY;
+		server.sin_port		= htons(SERVER_PORT);
+
+		// Bind socket to port
+		if (bind(socketServer, reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
+
+			// Error during binding to port
+			return false;
+
+		}
+	
+		// Listen for port (maximum N connections)
+		if (listen(socketServer, maxClients) < 0) {
+
+			// Error during port listening start
+			return false;
+
+		}
+
+		// Server started
+		isRunning = true;
+
+		// Success
+		return true;
+
+	}
+
+	// Stop server
+	bool tcpserver::stop() {
+
+		// Server stoped
+		isRunning = false;
+
+		// Close connection
+		if (close(socketServer) < 0) {
+
+			// Error during connection close
+			return false;
+
+		}
+
+		// Success
+		return true;
+
+	}
+
+
+	// Is server running
+	bool tcpserver::running() {
+
+		return isRunning;
+
+	}
+
+
+}	// namespcae networking
+
+
 // Clients connection handler
 void* connection_handler(int* socket_desc) {
 
@@ -67,6 +241,7 @@ void* connection_handler(int* socket_desc) {
 // Main server thread
 int main(int argc, const char* argv[]) {
 
+/*
 	int		socketServer	= -1;		// Server socket
 	int		socketClient	= -1;		// Client socket
 
@@ -150,6 +325,7 @@ int main(int argc, const char* argv[]) {
 
 	// Exit program
 	return 0;
+*/
 
 }
 
