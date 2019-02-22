@@ -6,6 +6,7 @@
 #include <sys/socket.h>	
 #include <arpa/inet.h>
 
+#include "../socket.hpp"
 #include "tcpclient.hpp"
 
 
@@ -16,13 +17,13 @@ namespace networking {
 	// C-tor
 	tcpclient::tcpclient()
 		: server	(),
-		  socketClient	(-1),
+		  socketClient	(),
 		  isConnected	(false) {}
 
 	// C-tor
 	tcpclient::tcpclient(const char* serverAddress, const unsigned int serverPort)
 		: server	(),
-		  socketClient	(-1),
+		  socketClient	(),
 		  isConnected	(false) {
 
 		// Connect to server
@@ -47,10 +48,7 @@ namespace networking {
 	bool tcpclient::connect(const char* serverAddress, const unsigned int serverPort) {
 
 		// Create socket
-		socketClient = socket(AF_INET, SOCK_STREAM, 0);
-
-		// check if socket was created
-		if (socketClient == -1) {
+		if (!socketClient.open()) {
 
 			// Error during socket creation
 			return false;
@@ -65,7 +63,7 @@ namespace networking {
 		server.sin_port		= htons(serverPort);
 
 		// Connect to remote server
-		if (::connect(socketClient, reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
+		if (::connect(socketClient.toImpl<int>(), reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
 
 			// Error during connection
 			return false;
@@ -84,7 +82,7 @@ namespace networking {
 	bool tcpclient::disconnect() {
 
 		// Close connection with server
-		if (close(socketClient) < 0) {
+		if (!socketClient.close()) {
 
 			// Error during socket closing
 			return false;
@@ -107,7 +105,7 @@ namespace networking {
 		int writed = 0;
 
 		// Send some data to server
-		if ((writed = write(socketClient, msg, size)) < 0) {
+		if ((writed = socketClient.send(msg, size)) < 0) {
 
 			// Error during write
 			return false;
@@ -135,7 +133,7 @@ namespace networking {
 		int readed = 0;
 
 		// Read reply from server
-		if ((readed = read(socketClient, msg, size)) < 0) {
+		if ((readed = socketClient.receive(msg, size)) < 0) {
 
 			// Error during read from server
 			return false;
@@ -168,4 +166,5 @@ namespace networking {
 
 
 }	// namespcae networking
+
 

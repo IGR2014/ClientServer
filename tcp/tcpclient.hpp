@@ -4,6 +4,7 @@
 
 
 #include <arpa/inet.h>
+#include "../socket.hpp"
 
 
 // Networking namespace
@@ -15,7 +16,7 @@ namespace networking {
 
 		sockaddr_in	server;			// Server address
 
-		int		socketClient;		// Client socket
+		socket_t	socketClient;		// Client socket
 
 		bool		isConnected;		// Is connected to server
 

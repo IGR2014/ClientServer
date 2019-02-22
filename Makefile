@@ -29,9 +29,9 @@ all : $(OBJFILES)
 	@echo "	MAKE	tcp"
 	@$(MAKE) -C tcp
 	@echo "	LD	tcpserver"
-	@$(LD) example-tcpserver.o tcp/tcpserver.o -o tcpserver $(LD_FLAGS)
+	@$(LD) example-tcpserver.o socket.o tcp/tcpserver.o -o tcpserver $(LD_FLAGS)
 	@echo "	LD	tcpclient"
-	@$(LD) example-tcpclient.o tcp/tcpclient.o -o tcpclient $(LD_FLAGS)
+	@$(LD) example-tcpclient.o socket.o tcp/tcpclient.o -o tcpclient $(LD_FLAGS)
 
 # Cleanup
 clean :

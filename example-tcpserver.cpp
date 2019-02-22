@@ -6,12 +6,14 @@
 
 // Connection settings
 #include "settings.hpp"
+// Socket type
+#include "socket.hpp"
 // TSP server
 #include "tcp/tcpserver.hpp"
 
 
 // Clients connection handler
-void clientsConnectionHandler(networking::tcpserver &s, int* clientID) {
+void clientsConnectionHandler(networking::tcpserver &s, networking::socket_t* clientID) {
 
 	// Connection handler init
 	std::cout << "Connection handler started" << std::endl;
@@ -25,7 +27,7 @@ void clientsConnectionHandler(networking::tcpserver &s, int* clientID) {
 		// Write message back to client
 		if (!s.send(*clientID, messageClient.get(), strlen(messageClient.get()))) {
 
-			// Connection handler init
+			// No client
 			std::cout << "Client diconnected" << std::endl;
 
 			// Stop
@@ -46,8 +48,8 @@ void clientsConnectionHandler(networking::tcpserver &s, int* clientID) {
 	// Cleanup
 	delete clientID;
 
-	// Connection handler end
-	std::cout << "Connection handler stoped" << std::endl;
+	// No client
+	std::cout << "Client diconnected" << std::endl;
 
 }
 
@@ -73,7 +75,7 @@ int main(int argc, const char* argv[]) {
 	while (s.running()) {
 
 		// Wait for connection
-		int* clientID = s.waitForConnect();
+		networking::socket_t* clientID = s.waitForConnect();
 
 		// Create connection handler thread
 		std::thread thrd = std::thread(clientsConnectionHandler, std::ref(s), clientID);

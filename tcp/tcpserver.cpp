@@ -22,11 +22,15 @@ namespace networking {
 
 	// C-tor
 	tcpserver::tcpserver()
-		: isRunning(false) {}
+		: server(),
+		  socketServer(),
+		  isRunning(false) {}
 
 	// C-tor
 	tcpserver::tcpserver(const unsigned int serverPort)
-		: isRunning(false) {
+		: server(),
+		  socketServer(),
+		  isRunning(false) {
 
 		// Start server on required port with default maximum clients number
 		start(serverPort, MAX_CLIENTS_NUMBER);
@@ -35,7 +39,9 @@ namespace networking {
 
 	// C-tor
 	tcpserver::tcpserver(const unsigned int serverPort, const unsigned int maxClients)
-		: isRunning(false) {
+		: server(),
+		  socketServer(),
+		  isRunning(false) {
 
 		// Start server on required port
 		start(serverPort, maxClients);
@@ -67,21 +73,17 @@ namespace networking {
 	bool tcpserver::start(const unsigned int serverPort, const unsigned int maxClients) {
 
 		// Create TCP socket
-		socketServer = socket(AF_INET, SOCK_STREAM, 0);
-		// Socket creation error
-		if (socketServer == -1) {
+		if (!socketServer.open()) {
 
-			// Erro during socket creation
+			// Error during socket creation
 			return false;
 
 		}
-		// Socket creation succeeded
-		std::cout << "Socket created" << std::endl;
 
 		// Multiclient flag
 		int multiclient = 1;
 		// Enable multiclient connect
-		if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &multiclient, sizeof(int)) < 0) {
+		if (::setsockopt(socketServer.toImpl<int>(), SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &multiclient, sizeof(int)) < 0) {
 
 			// Error during socket options setup
 			return false;
@@ -96,7 +98,7 @@ namespace networking {
 		server.sin_port		= htons(serverPort);
 
 		// Bind socket to port
-		if (bind(socketServer, reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
+		if (::bind(socketServer.toImpl<int>(), reinterpret_cast<sockaddr*>(&server), sizeof(server)) < 0) {
 
 			// Error during binding to port
 			return false;
@@ -104,7 +106,7 @@ namespace networking {
 		}
 	
 		// Listen for port (maximum N connections)
-		if (listen(socketServer, maxClients) < 0) {
+		if (::listen(socketServer.toImpl<int>(), maxClients) < 0) {
 
 			// Error during port listening start
 			return false;
@@ -126,7 +128,7 @@ namespace networking {
 		isRunning = false;
 
 		// Close connection
-		if (close(socketServer) < 0) {
+		if (!socketServer.close()) {
 
 			// Error during connection close
 			return false;
@@ -140,13 +142,13 @@ namespace networking {
 
 
 	// Send message to client (blocking)
-	bool tcpserver::send(int clientID, const char* msg, const int size) {
+	bool tcpserver::send(const socket_t &clientID, const char* msg, const int size) {
 
 		// Writed message size
 		int writed = 0;
 
 		// Send some data to client
-		if ((writed = write(clientID, msg, size)) < 0) {
+		if ((writed = clientID.send(msg, size)) < 0) {
 
 			// Error during write
 			return false;
@@ -165,13 +167,13 @@ namespace networking {
 	}
 
 	// Receive message from client (blocking)
-	bool tcpserver::receive(int clientID, char* msg, const int size) {
+	bool tcpserver::receive(const socket_t &clientID, char* msg, const int size) {
 
 		// Readed message size
 		int readed = 0;
 
 		// Read reply from client
-		if ((readed = read(clientID, msg, size)) < 0) {
+		if ((readed = clientID.receive(msg, size)) < 0) {
 
 			// Error during read
 			return false;
@@ -194,14 +196,14 @@ namespace networking {
 
 
 	// Wait for connection (blocking)
-	int* tcpserver::waitForConnect() {
+	socket_t* tcpserver::waitForConnect() {
 
 		int		socketClient	= -1;			// Client socket
 		sockaddr_in	client;					// Client address
 		socklen_t	clientLength	= sizeof(sockaddr_in);	// Client address size
 
 		// Wait for connection and accept it
-		if ((socketClient = accept(socketServer, reinterpret_cast<sockaddr*>(&client), static_cast<socklen_t*>(&clientLength))) > 0) {
+		if ((socketClient = ::accept(socketServer.toImpl<int>(), reinterpret_cast<sockaddr*>(&client), static_cast<socklen_t*>(&clientLength))) > 0) {
 
 			// New client added
 			std::cout << "New client connected" << std::endl;
@@ -209,7 +211,7 @@ namespace networking {
 		}
 
 		// Client acception failed
-		return new int(socketClient);
+		return new socket_t(socketClient);
 
 	}
 

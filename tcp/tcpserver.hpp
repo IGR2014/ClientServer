@@ -4,6 +4,7 @@
 
 
 #include <arpa/inet.h>
+#include "../socket.hpp"
 
 
 // Networking namespace
@@ -13,11 +14,11 @@ namespace networking {
 	// TCP server class
 	class tcpserver {
 
-		sockaddr_in		server;			// Server address
+		sockaddr_in	server;			// Server address
 
-		int			socketServer;		// Server socket
+		socket_t	socketServer;		// Server socket
 
-		bool			isRunning;		// Is server running
+		bool		isRunning;		// Is server running
 
 
 	public:
@@ -32,22 +33,22 @@ namespace networking {
 		~tcpserver();
 
 		// Start server
-		bool	start(const unsigned int serverPort);
+		bool		start(const unsigned int serverPort);
 		// Start server
-		bool	start(const unsigned int serverPort, const unsigned int maxClients);
+		bool		start(const unsigned int serverPort, const unsigned int maxClients);
 		// Stop server
-		bool	stop();
+		bool		stop();
 
 		// Send message to client (blocking)
-		bool	send(int clientID, const char* msg, const int size);
+		bool		send(const socket_t &clientID, const char* msg, const int size);
 		// Receive message from client (blocking)
-		bool	receive(int clientID, char* msg, const int size);
+		bool		receive(const socket_t &clientID, char* msg, const int size);
 
 		// Wait for connection (blocking)
-		int*	waitForConnect();
+		socket_t*	waitForConnect();
 
 		// Is server running
-		bool	running();
+		bool		running();
 
 
 	};
