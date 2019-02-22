@@ -6,59 +6,21 @@
 #include <sys/socket.h>	
 #include <arpa/inet.h>
 
-
-// Connection settings
-#include "settings.hpp"
+#include "tcpclient.hpp"
 
 
 // Networking namespace
 namespace networking {
 
 
-	// TCP Client class
-	class clienttcp {
-
-		sockaddr_in	server;			// Server address
-
-		int		socketClient;		// Client socket
-
-		bool		isConnected;		// Is connected to server
-
-
-	public:
-
-		// C-tor
-		clienttcp();
-		// C-tor
-		clienttcp(const char* serverAddress, const unsigned int serverPort);
-		// D-tor
-		~clienttcp();
-
-		// Connect to server
-		bool	connect(const char* serverAddress, const unsigned int serverPort);
-		// Disconnect from server
-		bool	disconnect();
-
-		// Send message to server
-		bool	send(const char* msg, const int size);
-		// Receive message from server
-		bool	receive(char* msg, const int size);
-
-		// Is client connected to server
-		bool	connected();
-
-
-	};
-
-
 	// C-tor
-	clienttcp::clienttcp()
+	tcpclient::tcpclient()
 		: server	(),
 		  socketClient	(-1),
 		  isConnected	(false) {}
 
 	// C-tor
-	clienttcp::clienttcp(const char* serverAddress, const unsigned int serverPort)
+	tcpclient::tcpclient(const char* serverAddress, const unsigned int serverPort)
 		: server	(),
 		  socketClient	(-1),
 		  isConnected	(false) {
@@ -69,7 +31,7 @@ namespace networking {
 	}
 
 	// D-tor
-	clienttcp::~clienttcp() {
+	tcpclient::~tcpclient() {
 
 		// Close connection if connected
 		if (isConnected) {
@@ -82,7 +44,7 @@ namespace networking {
 
 
 	// Connect to server
-	bool clienttcp::connect(const char* serverAddress, const unsigned int serverPort) {
+	bool tcpclient::connect(const char* serverAddress, const unsigned int serverPort) {
 
 		// Create socket
 		socketClient = socket(AF_INET, SOCK_STREAM, 0);
@@ -119,7 +81,7 @@ namespace networking {
 	}
 
 	// Disconnect from server
-	bool clienttcp::disconnect() {
+	bool tcpclient::disconnect() {
 
 		// Close connection with server
 		if (close(socketClient) < 0) {
@@ -139,7 +101,7 @@ namespace networking {
 
 
 	// Send message to server
-	bool clienttcp::send(const char* msg, const int size) {
+	bool tcpclient::send(const char* msg, const int size) {
 
 		// Writed message size
 		int writed = 0;
@@ -167,7 +129,7 @@ namespace networking {
 	}
 
 	// Receive message from server
-	bool clienttcp::receive(char* msg, const int size) {
+	bool tcpclient::receive(char* msg, const int size) {
 
 		// Readed message size
 		int readed = 0;
@@ -198,7 +160,7 @@ namespace networking {
 	}
 
 	// Is client connected to server
-	bool clienttcp::connected() {
+	bool tcpclient::connected() {
 
 		return isConnected;
 
@@ -206,59 +168,4 @@ namespace networking {
 
 
 }	// namespcae networking
-
-
-// Main client thread
-int main(int argc, const char* argv[]) {
-
-	// Client message holder
-	std::unique_ptr<char[]>	messageClient(new char[BUFFER_SIZE]);
-	// Server message holder
-	std::unique_ptr<char[]>	messageServer(new char[BUFFER_SIZE]);
-
-	// Client creation
-	networking::clienttcp c;
-
-	// Connect to server
-	if (c.connect(SERVER_ADDRESS, SERVER_PORT)) {
-
-		// Connection to server - success
-		std::cout << "Connected to server" << std::endl;
-
-	}
-
-	// Exchange data forever
-	while (c.connected()) {
-
-		// Message to send to server
-		std::cout << "Enter message:\t";
-		std::cin >> messageClient.get();
-
-		// Send message to server
-		c.send(messageClient.get(), strlen(messageClient.get()));
-
-		// Cleanup buffer
-		memset(messageServer.get(), 0, BUFFER_SIZE);
-
-		// Receive message from server
-		c.receive(messageServer.get(), BUFFER_SIZE);
-
-		// Output reply from server
-		std::cout << "Server reply:\t" << messageServer.get() << std::endl;
-
-	}
-
-	// Disconnect from server
-	if (c.disconnect()) {
-
-		// Disconnection from server - success
-		std::cout << "Disconnected from server" << std::endl;
-
-	}
-
-	// Exit
-	return 0;
-
-}
-
 
