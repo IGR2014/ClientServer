@@ -65,7 +65,7 @@ namespace networking {
 	bool tcpserver::start(const unsigned int serverPort) {
 
 		// Start with default maximum clients number
-		start(serverPort, MAX_CLIENTS_NUMBER);
+		return start(serverPort, MAX_CLIENTS_NUMBER);
 
 	}
 
@@ -142,7 +142,7 @@ namespace networking {
 
 
 	// Send message to client (blocking)
-	bool tcpserver::send(const socket_t &clientID, const char* msg, const int size) {
+	bool tcpserver::send(const tcpsocket_t &clientID, const char* msg, const int size) {
 
 		// Writed message size
 		int writed = 0;
@@ -167,7 +167,7 @@ namespace networking {
 	}
 
 	// Receive message from client (blocking)
-	bool tcpserver::receive(const socket_t &clientID, char* msg, const int size) {
+	bool tcpserver::receive(const tcpsocket_t &clientID, char* msg, const int size) {
 
 		// Readed message size
 		int readed = 0;
@@ -196,7 +196,7 @@ namespace networking {
 
 
 	// Wait for connection (blocking)
-	socket_t* tcpserver::waitForConnect() {
+	tcpsocket_t* tcpserver::waitForConnect() {
 
 		int		socketClient	= -1;			// Client socket
 		sockaddr_in	client;					// Client address
@@ -211,7 +211,7 @@ namespace networking {
 		}
 
 		// Client acception failed
-		return new socket_t(socketClient);
+		return new tcpsocket_t(socketClient);
 
 	}
 

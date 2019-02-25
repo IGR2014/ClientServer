@@ -6,8 +6,8 @@ OBJFILES	= $(patsubst %.cpp, %.o, $(SRCFILES))
 
 # Default rule for .cpp files
 %.o : %.cpp
-	@echo "	CXX	$^"
-	@$(CXX) -c $^ -o $@ $(CXXFLAGS)
+	@echo "	CXX	$<"
+	@$(CXX) -c $< -o $@ $(CXXFLAGS)
 
 
 # PHONY targets

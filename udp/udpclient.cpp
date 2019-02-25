@@ -6,8 +6,8 @@
 #include <sys/socket.h>	
 #include <arpa/inet.h>
 
-#include "tcpsocket.hpp"
-#include "tcpclient.hpp"
+#include "udpsocket.hpp"
+#include "udpclient.hpp"
 
 
 // Networking namespace
@@ -15,13 +15,13 @@ namespace networking {
 
 
 	// C-tor
-	tcpclient::tcpclient()
+	udpclient::udpclient()
 		: server	(),
 		  socketClient	(),
 		  isConnected	(false) {}
 
 	// C-tor
-	tcpclient::tcpclient(const char* serverAddress, const unsigned int serverPort)
+	udpclient::udpclient(const char* serverAddress, const unsigned int serverPort)
 		: server	(),
 		  socketClient	(),
 		  isConnected	(false) {
@@ -32,7 +32,7 @@ namespace networking {
 	}
 
 	// D-tor
-	tcpclient::~tcpclient() {
+	udpclient::~udpclient() {
 
 		// Close connection if connected
 		if (isConnected) {
@@ -45,7 +45,7 @@ namespace networking {
 
 
 	// Connect to server
-	bool tcpclient::connect(const char* serverAddress, const unsigned int serverPort) {
+	bool udpclient::connect(const char* serverAddress, const unsigned int serverPort) {
 
 		// Create socket
 		if (!socketClient.open()) {
@@ -79,7 +79,7 @@ namespace networking {
 	}
 
 	// Disconnect from server
-	bool tcpclient::disconnect() {
+	bool udpclient::disconnect() {
 
 		// Close connection with server
 		if (!socketClient.close()) {
@@ -99,7 +99,7 @@ namespace networking {
 
 
 	// Send message to server
-	bool tcpclient::send(const char* msg, const int size) {
+	bool udpclient::send(const char* msg, const int size) {
 
 		// Writed message size
 		int writed = 0;
@@ -127,7 +127,7 @@ namespace networking {
 	}
 
 	// Receive message from server
-	bool tcpclient::receive(char* msg, const int size) {
+	bool udpclient::receive(char* msg, const int size) {
 
 		// Readed message size
 		int readed = 0;
@@ -158,7 +158,7 @@ namespace networking {
 	}
 
 	// Is client connected to server
-	bool tcpclient::connected() {
+	bool udpclient::connected() {
 
 		return isConnected;
 

@@ -1,23 +1,23 @@
 #pragma	once
-#ifndef	NETWORKING_TCP_CLIENT_HPP
-#define	NETWORKING_TCP_CLIENT_HPP
+#ifndef	NETWORKING_UDP_CLIENT_HPP
+#define	NETWORKING_UDP_CLIENT_HPP
 
 
 #include <arpa/inet.h>
 
-#include "tcpsocket.hpp"
+#include "udpsocket.hpp"
 
 
 // Networking namespace
 namespace networking {
 
 
-	// TCP Client class
-	class tcpclient {
+	// UDP Client class
+	class udpclient {
 
 		sockaddr_in	server;			// Server address
 
-		tcpsocket_t	socketClient;		// Client socket
+		udpsocket_t	socketClient;		// Client socket
 
 		bool		isConnected;		// Is connected to server
 
@@ -25,11 +25,11 @@ namespace networking {
 	public:
 
 		// C-tor
-		tcpclient();
+		udpclient();
 		// C-tor
-		tcpclient(const char* serverAddress, const unsigned int serverPort);
+		udpclient(const char* serverAddress, const unsigned int serverPort);
 		// D-tor
-		~tcpclient();
+		~udpclient();
 
 		// Connect to server
 		bool	connect(const char* serverAddress, const unsigned int serverPort);
@@ -51,5 +51,5 @@ namespace networking {
 }	// namespace networking
 
 
-#endif	// NETWORKING_TCP_CLIENT_HPP
+#endif	// NETWORKING_UDP_CLIENT_HPP
 
